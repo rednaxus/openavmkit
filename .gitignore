@@ -40,3 +40,4 @@ cache/
 out/
 
 .claude/
+.DS_Store
