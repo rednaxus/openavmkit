@@ -15,30 +15,29 @@
 
   "data": {
     "load": {
-
       "__comment_parcels": "SOURCE: SCC Assessor Property Characteristic File + Secured Master File. Column names are placeholders -- inspect parcels.csv headers and update before running.",
       "parcels": {
         "filename": "parcels.csv",
         "load": {
-          "key":                     ["APN", "string"],
-          "address":                 "SITUS_ADDR",
-          "land_class":              "USE_CODE",
-          "bldg_class":              "USE_DESC",
-          "zoning":                  "ZONING",
-          "neighborhood":            "NEIGHBORHOOD",
-          "assr_land_value":         ["ASSESSED_LAND_VALUE", "float"],
-          "assr_impr_value":         ["ASSESSED_IMPR_VALUE", "float"],
-          "assr_market_value":       ["ASSESSED_TOTAL_VALUE", "float"],
-          "land_area_sqft":          ["LOT_SIZE_SQFT", "float"],
+          "key": ["APN", "string"],
+          "address": "SITUS_ADDR",
+          "land_class": "USE_CODE",
+          "bldg_class": "USE_DESC",
+          "zoning": "ZONING",
+          "neighborhood": "NEIGHBORHOOD",
+          "assr_land_value": ["ASSESSED_LAND_VALUE", "float"],
+          "assr_impr_value": ["ASSESSED_IMPR_VALUE", "float"],
+          "assr_market_value": ["ASSESSED_TOTAL_VALUE", "float"],
+          "land_area_sqft": ["LOT_SIZE_SQFT", "float"],
           "bldg_area_finished_sqft": ["BLDG_SQFT", "float"],
-          "bldg_year_built":         ["YEAR_BUILT", "float"],
-          "bldg_rooms_bed":          ["BEDROOMS", "float"],
-          "bldg_rooms_bath_full":    ["FULL_BATHS", "float"],
-          "bldg_rooms_bath_half":    ["HALF_BATHS", "float"],
-          "bldg_quality_num":        ["QUALITY_CODE", "float"],
-          "bldg_condition_num":      ["CONDITION_CODE", "float"],
-          "bldg_stories":            ["STORIES", "float"],
-          "bldg_units":              ["UNITS", "float"]
+          "bldg_year_built": ["YEAR_BUILT", "float"],
+          "bldg_rooms_bed": ["BEDROOMS", "float"],
+          "bldg_rooms_bath_full": ["FULL_BATHS", "float"],
+          "bldg_rooms_bath_half": ["HALF_BATHS", "float"],
+          "bldg_quality_num": ["QUALITY_CODE", "float"],
+          "bldg_condition_num": ["CONDITION_CODE", "float"],
+          "bldg_stories": ["STORIES", "float"],
+          "bldg_units": ["UNITS", "float"]
         }
       },
 
@@ -46,13 +45,13 @@
       "sales": {
         "filename": "sale.csv",
         "load": {
-          "key":        ["APN", "string"],
-          "key_sale":   ["TRANSACTION_ID", "string"],
-          "sale_date":  ["SALE_DATE", "datetime", "%Y-%m-%d"],
+          "key": ["APN", "string"],
+          "key_sale": ["TRANSACTION_ID", "string"],
+          "sale_date": ["SALE_DATE", "datetime", "%Y-%m-%d"],
           "sale_price": ["SALE_PRICE", "float"]
         },
         "calc": {
-          "valid_sale":  ["?", ["==", "TRANSFER_TYPE", "str:ARMS_LENGTH"]],
+          "valid_sale": ["?", ["==", "TRANSFER_TYPE", "str:ARMS_LENGTH"]],
           "vacant_sale": ["?", ["==", "PROPERTY_TYPE", "str:LAND"]]
         }
       },
@@ -70,7 +69,7 @@
         "filename": "geo/zoning.parquet",
         "load": {
           "zoning_class": "ZONECLASS",
-          "zoning_desc":  "ZONEDESC"
+          "zoning_desc": "ZONEDESC"
         }
       },
 
@@ -91,7 +90,7 @@
       "geo_lakes": {
         "filename": "geo/lakes.parquet",
         "load": {
-          "name":      "name",
+          "name": "name",
           "water_type": "water"
         }
       },
@@ -99,7 +98,7 @@
       "geo_streams": {
         "filename": "geo/streams.parquet",
         "load": {
-          "name":          "name",
+          "name": "name",
           "waterway_type": "waterway"
         }
       },
@@ -143,9 +142,9 @@
       "geo_trees": {
         "filename": "geo/trees.parquet",
         "load": {
-          "tree_species":  "SPECIES",
+          "tree_species": "SPECIES",
           "tree_diameter": "DIAMETER",
-          "tree_height":   "HEIGHT",
+          "tree_height": "HEIGHT",
           "tree_heritage": "HERITAGE"
         }
       },
@@ -161,8 +160,8 @@
 
     "process": {
       "merge": {
-        "universe": ["parcels"],
-        "sales":    ["sales"]
+        "universe": ["parcels", "building"],
+        "sales": ["sales"]
       },
 
       "__comment_filter": "Filter to Mountain View parcels when using county-wide assessor data. SITUS_CITY_NAME comes from geo_parcels; update if assessor CSV uses a different city field.",
@@ -174,24 +173,24 @@
         "__comment_geometry": "Polygon layers spatially joined onto parcels by centroid containment. Stamps zoning class and school district onto each parcel.",
         "geometry": [
           {
-            "id":     "geo_zoning",
+            "id": "geo_zoning",
             "fields": ["zoning_class", "zoning_desc"]
           },
           {
-            "id":     "geo_school_district",
+            "id": "geo_school_district",
             "fields": ["school_district"]
           }
         ],
 
         "census": {
-          "enabled":       true,
-          "fips":          "06085",
-          "year":          2023,
+          "enabled": true,
+          "fips": "06085",
+          "year": 2023,
           "stamp_regions": true
         },
 
         "dem": {
-          "enabled":      true,
+          "enabled": true,
           "resolution_m": 10
         },
 
@@ -203,100 +202,104 @@
           "enabled": true,
 
           "parks": {
-            "source":       "geo_parks",
+            "source": "geo_parks",
             "max_distance": 2.0,
-            "unit":         "km",
-            "store_top":    true,
-            "top_n":        3,
-            "sort_field":   "area"
+            "unit": "km",
+            "store_top": true,
+            "top_n": 3,
+            "sort_field": "area"
           },
 
           "lakes": {
-            "source":       "geo_lakes",
+            "source": "geo_lakes",
             "max_distance": 5.0,
-            "unit":         "km",
-            "store_top":    true,
-            "top_n":        2,
-            "sort_field":   "area"
+            "unit": "km",
+            "store_top": true,
+            "top_n": 2,
+            "sort_field": "area"
           },
 
           "streams": {
-            "source":       "geo_streams",
+            "source": "geo_streams",
             "max_distance": 2.0,
-            "unit":         "km"
+            "unit": "km"
           },
 
           "golf_courses": {
-            "source":       "geo_golf_courses",
+            "source": "geo_golf_courses",
             "max_distance": 3.0,
-            "unit":         "km"
+            "unit": "km"
           },
 
           "universities": {
-            "source":       "geo_universities",
+            "source": "geo_universities",
             "max_distance": 5.0,
-            "unit":         "km"
+            "unit": "km"
           },
 
           "colleges": {
-            "source":       "geo_colleges",
+            "source": "geo_colleges",
             "max_distance": 5.0,
-            "unit":         "km"
+            "unit": "km"
           },
 
           "airport": {
-            "source":       "geo_airport",
+            "source": "geo_airport",
             "max_distance": 10.0,
-            "unit":         "km"
+            "unit": "km"
           },
 
           "transit": {
-            "osm":          true,
+            "osm": true,
             "max_distance": 1.0,
-            "unit":         "km",
-            "osm_tags":     {"public_transport": ["stop_position", "station"], "railway": ["station", "halt", "tram_stop"], "highway": ["bus_stop"]}
+            "unit": "km",
+            "osm_tags": {
+              "public_transport": ["stop_position", "station"],
+              "railway": ["station", "halt", "tram_stop"],
+              "highway": ["bus_stop"]
+            }
           },
 
           "schools": {
-            "osm":          true,
+            "osm": true,
             "max_distance": 2.0,
-            "unit":         "km",
-            "osm_tags":     {"amenity": ["school"]}
+            "unit": "km",
+            "osm_tags": { "amenity": ["school"] }
           },
 
           "city_boundary": {
-            "source":       "geo_city",
+            "source": "geo_city",
             "max_distance": 15.0,
-            "unit":         "km"
+            "unit": "km"
           },
 
           "trees": {
-            "source":       "geo_trees",
+            "source": "geo_trees",
             "max_distance": 0.25,
-            "unit":         "km"
+            "unit": "km"
           },
 
           "tree_canopy": {
-            "source":       "geo_tree_canopy",
+            "source": "geo_tree_canopy",
             "max_distance": 0.1,
-            "unit":         "km",
-            "store_top":    true,
-            "top_n":        3,
-            "sort_field":   "canopy_area_sqm"
+            "unit": "km",
+            "store_top": true,
+            "top_n": 3,
+            "sort_field": "canopy_area_sqm"
           },
 
           "community_centers": {
-            "osm":          true,
+            "osm": true,
             "max_distance": 2.0,
-            "unit":         "km",
-            "osm_tags":     {"amenity": ["community_centre"]}
+            "unit": "km",
+            "osm_tags": { "amenity": ["community_centre"] }
           },
 
           "theaters": {
-            "osm":          true,
+            "osm": true,
             "max_distance": 3.0,
-            "unit":         "km",
-            "osm_tags":     {"amenity": ["theatre"]}
+            "unit": "km",
+            "osm_tags": { "amenity": ["theatre"] }
           }
         }
       }
@@ -306,7 +309,7 @@
   "modeling": {
     "metadata": {
       "valuation_date": "2025-01-01",
-      "modeler":        "OpenAVMKit"
+      "modeler": "OpenAVMKit"
     }
   }
 }
