@@ -148,6 +148,14 @@
           "tree_height":   "HEIGHT",
           "tree_heritage": "HERITAGE"
         }
+      },
+
+      "__comment_geo_tree_canopy": "SOURCE: City of Mountain View OpenData — tree canopy polygons collected Sept 2013 (67,402 polygons). https://data-mountainview.opendata.arcgis.com/datasets/MountainView::tree-canopy",
+      "geo_tree_canopy": {
+        "filename": "geo/tree_canopy.parquet",
+        "load": {
+          "canopy_area_sqm": "canopy_area_sqm"
+        }
       }
     },
 
@@ -245,13 +253,15 @@
           "transit": {
             "osm":          true,
             "max_distance": 1.0,
-            "unit":         "km"
+            "unit":         "km",
+            "osm_tags":     {"public_transport": ["stop_position", "station"], "railway": ["station", "halt", "tram_stop"], "highway": ["bus_stop"]}
           },
 
           "schools": {
             "osm":          true,
             "max_distance": 2.0,
-            "unit":         "km"
+            "unit":         "km",
+            "osm_tags":     {"amenity": ["school"]}
           },
 
           "city_boundary": {
@@ -264,6 +274,29 @@
             "source":       "geo_trees",
             "max_distance": 0.25,
             "unit":         "km"
+          },
+
+          "tree_canopy": {
+            "source":       "geo_tree_canopy",
+            "max_distance": 0.1,
+            "unit":         "km",
+            "store_top":    true,
+            "top_n":        3,
+            "sort_field":   "canopy_area_sqm"
+          },
+
+          "community_centers": {
+            "osm":          true,
+            "max_distance": 2.0,
+            "unit":         "km",
+            "osm_tags":     {"amenity": ["community_centre"]}
+          },
+
+          "theaters": {
+            "osm":          true,
+            "max_distance": 3.0,
+            "unit":         "km",
+            "osm_tags":     {"amenity": ["theatre"]}
           }
         }
       }
