@@ -7,7 +7,10 @@ build/
 tests/catboost_info/
 tests/out/
 tests/data/
-notebooks/pipeline/data/
+notebooks/pipeline/data/*/in/*.csv
+notebooks/pipeline/data/*/in/osm/
+notebooks/pipeline/data/*/out/
+notebooks/pipeline/data/*/cache/
 notebooks/pipeline/out/
 notebooks/pipeline/cache/
 notebooks/cache/

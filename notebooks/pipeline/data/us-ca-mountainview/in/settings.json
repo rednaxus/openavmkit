@@ -1,0 +1,262 @@
+{
+  "__comment": "Mountain View, CA locality settings. Column names in data.load.parcels and data.load.sales are PLACEHOLDERS -- update to match actual file headers from SCC Assessor and sales vendor before running.",
+
+  "locality": {
+    "name": "Mountain View",
+    "county": "Santa Clara",
+    "state": "CA",
+    "slug": "us-ca-mountainview",
+    "units": "imperial",
+    "center": {
+      "latitude": 37.3861,
+      "longitude": -122.0839
+    }
+  },
+
+  "data": {
+    "load": {
+
+      "__comment_parcels": "SOURCE: SCC Assessor Property Characteristic File + Secured Master File. Column names are placeholders -- inspect parcels.csv headers and update before running.",
+      "parcels": {
+        "filename": "parcels.csv",
+        "load": {
+          "key":                     ["APN", "string"],
+          "address":                 "SITUS_ADDR",
+          "land_class":              "USE_CODE",
+          "bldg_class":              "USE_DESC",
+          "zoning":                  "ZONING",
+          "neighborhood":            "NEIGHBORHOOD",
+          "assr_land_value":         ["ASSESSED_LAND_VALUE", "float"],
+          "assr_impr_value":         ["ASSESSED_IMPR_VALUE", "float"],
+          "assr_market_value":       ["ASSESSED_TOTAL_VALUE", "float"],
+          "land_area_sqft":          ["LOT_SIZE_SQFT", "float"],
+          "bldg_area_finished_sqft": ["BLDG_SQFT", "float"],
+          "bldg_year_built":         ["YEAR_BUILT", "float"],
+          "bldg_rooms_bed":          ["BEDROOMS", "float"],
+          "bldg_rooms_bath_full":    ["FULL_BATHS", "float"],
+          "bldg_rooms_bath_half":    ["HALF_BATHS", "float"],
+          "bldg_quality_num":        ["QUALITY_CODE", "float"],
+          "bldg_condition_num":      ["CONDITION_CODE", "float"],
+          "bldg_stories":            ["STORIES", "float"],
+          "bldg_units":              ["UNITS", "float"]
+        }
+      },
+
+      "__comment_sales": "SOURCE: SCC Assessor Annual Key Change File or ATTOM. Column names are placeholders -- inspect sale.csv headers and update. Also update valid_sale and vacant_sale calc expressions to match actual type-code values in the data.",
+      "sales": {
+        "filename": "sale.csv",
+        "load": {
+          "key":        ["APN", "string"],
+          "key_sale":   ["TRANSACTION_ID", "string"],
+          "sale_date":  ["SALE_DATE", "datetime", "%Y-%m-%d"],
+          "sale_price": ["SALE_PRICE", "float"]
+        },
+        "calc": {
+          "valid_sale":  ["?", ["==", "TRANSFER_TYPE", "str:ARMS_LENGTH"]],
+          "vacant_sale": ["?", ["==", "PROPERTY_TYPE", "str:LAND"]]
+        }
+      },
+
+      "__comment_geo": "All geo/ files are EPSG:4326. parcels and zoning from City of Mountain View OpenData; city boundary filtered to MV only; OSM features via osmnx; school districts and census boundaries from Census Bureau.",
+
+      "geo_parcels": {
+        "filename": "geo/parcels.parquet",
+        "load": {
+          "key": "APN"
+        }
+      },
+
+      "geo_zoning": {
+        "filename": "geo/zoning.parquet",
+        "load": {
+          "zoning_class": "ZONECLASS",
+          "zoning_desc":  "ZONEDESC"
+        }
+      },
+
+      "geo_city": {
+        "filename": "geo/city.parquet",
+        "load": {
+          "city_name": "NAME"
+        }
+      },
+
+      "geo_parks": {
+        "filename": "geo/parks.parquet",
+        "load": {
+          "name": "name"
+        }
+      },
+
+      "geo_lakes": {
+        "filename": "geo/lakes.parquet",
+        "load": {
+          "name":      "name",
+          "water_type": "water"
+        }
+      },
+
+      "geo_streams": {
+        "filename": "geo/streams.parquet",
+        "load": {
+          "name":          "name",
+          "waterway_type": "waterway"
+        }
+      },
+
+      "geo_golf_courses": {
+        "filename": "geo/golf_courses.parquet",
+        "load": {
+          "name": "name"
+        }
+      },
+
+      "geo_universities": {
+        "filename": "geo/universities.parquet",
+        "load": {
+          "name": "name"
+        }
+      },
+
+      "geo_colleges": {
+        "filename": "geo/colleges.parquet",
+        "load": {
+          "name": "name"
+        }
+      },
+
+      "geo_airport": {
+        "filename": "geo/airport.parquet",
+        "load": {
+          "name": "name"
+        }
+      },
+
+      "geo_school_district": {
+        "filename": "geo/school_district.parquet",
+        "load": {
+          "school_district": "NAME"
+        }
+      }
+    },
+
+    "process": {
+      "merge": {
+        "universe": ["parcels"],
+        "sales":    ["sales"]
+      },
+
+      "__comment_filter": "Filter to Mountain View parcels when using county-wide assessor data. SITUS_CITY_NAME comes from geo_parcels; update if assessor CSV uses a different city field.",
+      "filter": {
+        "universe": ["==", "SITUS_CITY_NAME", "str:MOUNTAIN VIEW"]
+      },
+
+      "enrich": {
+        "__comment_geometry": "Polygon layers spatially joined onto parcels by centroid containment. Stamps zoning class and school district onto each parcel.",
+        "geometry": [
+          {
+            "id":     "geo_zoning",
+            "fields": ["zoning_class", "zoning_desc"]
+          },
+          {
+            "id":     "geo_school_district",
+            "fields": ["school_district"]
+          }
+        ],
+
+        "census": {
+          "enabled":       true,
+          "fips":          "06085",
+          "year":          2023,
+          "stamp_regions": true
+        },
+
+        "dem": {
+          "enabled":      true,
+          "resolution_m": 10
+        },
+
+        "streets": {
+          "enabled": false
+        },
+
+        "distances": {
+          "enabled": true,
+
+          "parks": {
+            "source":       "geo_parks",
+            "max_distance": 2.0,
+            "unit":         "km",
+            "store_top":    true,
+            "top_n":        3,
+            "sort_field":   "area"
+          },
+
+          "lakes": {
+            "source":       "geo_lakes",
+            "max_distance": 5.0,
+            "unit":         "km",
+            "store_top":    true,
+            "top_n":        2,
+            "sort_field":   "area"
+          },
+
+          "streams": {
+            "source":       "geo_streams",
+            "max_distance": 2.0,
+            "unit":         "km"
+          },
+
+          "golf_courses": {
+            "source":       "geo_golf_courses",
+            "max_distance": 3.0,
+            "unit":         "km"
+          },
+
+          "universities": {
+            "source":       "geo_universities",
+            "max_distance": 5.0,
+            "unit":         "km"
+          },
+
+          "colleges": {
+            "source":       "geo_colleges",
+            "max_distance": 5.0,
+            "unit":         "km"
+          },
+
+          "airport": {
+            "source":       "geo_airport",
+            "max_distance": 10.0,
+            "unit":         "km"
+          },
+
+          "transit": {
+            "osm":          true,
+            "max_distance": 1.0,
+            "unit":         "km"
+          },
+
+          "schools": {
+            "osm":          true,
+            "max_distance": 2.0,
+            "unit":         "km"
+          },
+
+          "city_boundary": {
+            "source":       "geo_city",
+            "max_distance": 15.0,
+            "unit":         "km"
+          }
+        }
+      }
+    }
+  },
+
+  "modeling": {
+    "metadata": {
+      "valuation_date": "2025-01-01",
+      "modeler":        "OpenAVMKit"
+    }
+  }
+}
